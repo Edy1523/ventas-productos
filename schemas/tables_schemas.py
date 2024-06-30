@@ -51,3 +51,29 @@ class ProveedoresSchema(BaseModel):
                 "direccion_proveedor":"cr cll av #"
             }            
         }
+        
+class ProductosSchema(BaseModel):
+    nombre_producto:str = Field(min_length=1, max_length=25)
+    descripcion:str = Field(min_length=5, max_length=50)
+    precio:int = Field(gt=0)
+    
+    class Config:
+        json_schema_extra = {
+            "example":{
+                "nombre_producto":"default",
+                "descripcion":"descripcion de como es el producto",
+                "precio":100
+            }            
+        }
+        
+class InventariosSchema(BaseModel):
+    cantidad:int = Field(ge=0)
+    ubicacion:str = Field(min_length=1, max_length=25)
+    
+    class Config:
+        json_schema_extra = {
+            "example":{
+                "cantidad":10,
+                "ubicacion":"Bodega 1"
+            }            
+        }
