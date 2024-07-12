@@ -32,7 +32,7 @@ class EmpleadosSchema(BaseModel):
                 "nombre":"default",
                 "puesto":"example",
                 "salario":500000,
-                "fecha_contratacion":"2000/00/00"
+                "fecha_contratacion":"2000-00-00"
             }            
         }
 
@@ -77,3 +77,42 @@ class InventariosSchema(BaseModel):
                 "ubicacion":"Bodega 1"
             }            
         }
+        
+class PedidosSchema(BaseModel):
+    fecha_pedido:str = Field(min_length=5, max_length=20)
+    estado_pedido:str = Field(min_length=1, max_length=25)
+    cantidad_comprada:int = Field(ge=1)
+    
+    class Config:
+        json_schema_extra = {
+            "example":{
+                "fecha_pedido":'2000-00-00',
+                "estado_pedido":"Estado del envio del producto",
+                "cantidad_comprada":10
+            }
+        }
+        
+class EntregasSchemas(BaseModel):
+    fecha_entrega:str = Field(min_length=5, max_length=25)
+    estado_entrega:str = Field(min_length=1, max_length=25)
+
+    class Config:
+        json_schema_extra = {
+            "example":{
+                "fecha_entrega":'2000-00-00',
+                "estado_entrega":'En Bodega'
+            }
+        }
+        
+class OrdenesComprasSchemas(BaseModel):
+    fecha_orden:str = Field(min_length=5, max_length=25)
+    estado_orden:str = Field(min_length=1, max_length=15)
+    
+    class Config:
+        json_schema_extra = {
+            "example":{
+                "fecha_orden":'2000-00-00',
+                "estado_orden":'Terminado'
+            }
+        }
+    

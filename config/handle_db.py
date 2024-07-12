@@ -7,7 +7,7 @@ import psycopg2.extras
 env_path = Path('.') / '.env'
 load_dotenv(dotenv_path=env_path)
 
-DBNAME : str = os.getenv("DBNAME")
+DBNAME : str = os.getenv("DBNAME")#''
 #USER : str = os.getenv("USER")
 PASSWORD : str = os.getenv("PASSWORD")
 HOST : str = os.getenv("HOST")
@@ -34,10 +34,10 @@ class HandleClientes:
             self._conn.rollback()
             return False
         
-    def get_all(self):
+    def get_all_by_addres(self, addres):
         self._cur.execute("""
-            SELECT * FROM "clientes"              
-            """)
+            SELECT * FROM "clientes" WHERE direccion=%s
+            """,(addres,))
         return self._cur.fetchall()
     
     def get_one(self, id):
@@ -95,10 +95,10 @@ class HandleEmpleados:
             self._conn.rollback()
             return False
     
-    def get_all(self):
+    def get_all_by_charge(self, charge):
         self._cur.execute("""
-            SELECT * FROM "empleados"
-            """)
+            SELECT * FROM "empleados" WHERE puesto=%s
+            """, (charge,))
         return self._cur.fetchall()
         
     def get_one(self,id):
@@ -156,10 +156,10 @@ class HandleProveedores:
             self._conn.rollback()
             return False
         
-    def get_all(self):
+    def get_all_by_addres(self, addres):
         self._cur.execute("""
-           SELECT * FROM "proveedores"                              
-            """)
+           SELECT * FROM "proveedores" WHERE direccion_proveedor=%s
+            """, (addres,))
         return self._cur.fetchall()
     
     def get_one(self,id):
@@ -191,6 +191,9 @@ class HandleProveedores:
             self._conn.commit()
             return True
         return None
+    
+    def __del__(self):
+        self._conn.close()
     
 class HandleProductos:
     def __init__(self) -> None:
@@ -263,6 +266,19 @@ class HandleProductos:
             return id['id']
         return None
     
+    def get_price(self, nombre):
+        get_product = self.get_one(nombre)
+        if get_product:
+            self._cur.execute("""
+                SELECT precio FROM "productos" WHERE nombre_producto = %s              
+                """, (nombre,))
+            id = self._cur.fetchone()
+            return id['precio']
+        return None
+    
+    def __del__(self):
+        self._conn.close()
+    
 class HandleInventarios:
     def __init__(self) -> None:
         try:
@@ -317,6 +333,22 @@ class HandleInventarios:
             return True
         return None
     
+    def update_stock(self, new_stock, nombre_producto):
+        get_id_product = HandleProductos().get_id(nombre_producto)
+        old_stock = self.get_one(nombre_producto)
+        if get_id_product:
+            if old_stock["cantidad"] > new_stock:
+                actual_stock = old_stock["cantidad"] - new_stock
+                self._cur.execute("UPDATE inventarios SET cantidad='{}' WHERE id_producto='{}'".format(
+                    actual_stock,
+                    get_id_product
+                ))
+                self._conn.commit()
+                return True
+            else: 
+                return False
+        return None
+    
     def delete(self, nombre_producto):
         producto = HandleProductos()
         id_producto = producto.get_id(nombre_producto)
@@ -325,3 +357,240 @@ class HandleInventarios:
             self._conn.commit()
             return True
         return None
+    
+    def __del__(self):
+        self._conn.close()
+
+class HandlePedidos:
+    def __init__(self) -> None:
+        try:
+            self._conn = psycopg2.connect(f"dbname={DBNAME} user=postgres password={PASSWORD} host={HOST} port={PORT}")
+            self._cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        except psycopg2.OperationalError as err:
+            print("\x1b[1;41mThe connection to the database hasn't been succesful\x1b[0;37m")
+            print(err)
+            self._conn.close()
+            
+    def insert(self, data, id, nombre):
+        id_producto = HandleProductos().get_id(nombre)
+        get_client = HandleClientes().get_one(id)
+        if id_producto and get_client:
+            product_price = HandleProductos().get_price(nombre)
+            monto_total = data["cantidad_comprada"] * product_price
+            self._cur.execute("INSERT INTO pedidos(fecha_pedido, estado_pedido, monto_total, cantidad_comprada, id_cliente, id_producto) VALUES ('{}','{}','{}','{}','{}','{}') RETURNING id".format(
+                data["fecha_pedido"],
+                data["estado_pedido"],
+                monto_total,
+                data["cantidad_comprada"],
+                id,
+                id_producto
+            ))
+            update_stock = HandleInventarios().update_stock(data["cantidad_comprada"],nombre)
+            if update_stock:
+                self._conn.commit()
+                return self._cur.fetchone()
+            elif update_stock==False:
+                self._conn.rollback()
+                return False
+            return None
+        return None
+    
+    def get_one(self, id):
+        self._cur.execute("""
+            SELECT * FROM "pedidos" WHERE id=%s              
+            """, (id,))
+        return self._cur.fetchone()
+    
+    def get_by_client(self, id_cliente):
+        self._cur.execute("""
+            SELECT * FROM "pedidos" WHERE id_cliente=%s              
+            """, (id_cliente,))
+        return self._cur.fetchall()
+    
+    def get_by_date(self, date):
+        self._cur.execute("""
+            SELECT * FROM "pedidos" WHERE fecha_pedido=%s              
+            """, (date,))
+        return self._cur.fetchall()
+    
+    def get_by_product(self, nombre, id_cliente):
+        id_producto = HandleProductos().get_id(nombre)
+        if id_producto:
+            self._cur.execute("""
+            SELECT * FROM "pedidos" WHERE id_producto=%s AND id_cliente=%s             
+            """, (id_producto,id_cliente))
+            return self._cur.fetchall()
+        return None
+    
+    def __del__(self):
+        self._conn.close()
+    
+class HandleEntregas:
+    def __init__(self) -> None:
+        try:
+            self._conn = psycopg2.connect(f"dbname={DBNAME} user=postgres password={PASSWORD} host={HOST} port={PORT}")
+            self._cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        except psycopg2.OperationalError as err:
+            print("\x1b[1;41mThe connection to the database hasn't been succesful\x1b[0;37m")
+            print(err)
+            self._conn.close()
+            
+    def insert(self, data, id_pedido):
+        get_order = HandlePedidos().get_one(id_pedido)
+        get_by_order = self.get_by_order(id_pedido)
+        if get_order == None:
+            return False
+        elif get_by_order==None:
+            get_id_client = HandleClientes().get_one(get_order["id_cliente"])
+            self._cur.execute("INSERT INTO entregas(fecha_entrega, direccion_entrega, estado_entrega, id_pedido) VALUES ('{}', '{}', '{}', '{}') RETURNING id".format(
+                data["fecha_entrega"],
+                get_id_client["direccion"],
+                data["estado_entrega"],
+                id_pedido
+            ))
+            self._conn.commit()
+            return self._cur.fetchone()
+        return None
+    
+    def get_by_state(self, state):
+        self._cur.execute("""
+            SELECT * FROM "entregas" WHERE estado_entrega=%s              
+            """, (state,))
+        return self._cur.fetchall()
+    
+    def get_by_order(self, id_pedido):
+        self._cur.execute("""
+            SELECT * FROM "entregas" WHERE id_pedido=%s              
+            """, (id_pedido,))
+        return self._cur.fetchone()
+    
+    def get_one(self, id):
+        self._cur.execute("""
+            SELECT * FROM "entregas" WHERE id=%s              
+            """, (id,))
+        return self._cur.fetchone()
+    
+    def get_done_delivery(self, id_pedido):
+        get_order = HandlePedidos().get_one(id_pedido)
+        if get_order:
+            self._cur.execute("""
+                SELECT * FROM "entregas" WHERE estado_entrega='Entregado' AND id_pedido=%s             
+                """, (id_pedido,))
+            return self._cur.fetchone()
+        return False
+    
+    def update_state(self, id, state):
+        get_delivery = self.get_one(id)
+        if get_delivery:
+            self._cur.execute("UPDATE entregas SET estado_entrega='{}' WHERE id='{}'". format(
+                state,
+                id
+            ))
+            self._conn.commit()
+            return True
+        return None
+    
+    def update_date(self, id_pedido, date):
+        get_done_delivery = self.get_by_order(id_pedido)
+        if get_done_delivery:
+            self._cur.execute("UPDATE entregas SET fecha_entrega='{}' WHERE id_pedido={}".format(
+                date,
+                id_pedido
+            ))
+            self._conn.commit()
+            return True
+        return None
+    
+    def delete_done_deliveries(self, id_pedido):
+        get_delivery = self.get_done_delivery(id_pedido)
+        if get_delivery==False:
+            return False
+        elif get_delivery:
+            self._cur.execute("""
+            DELETE FROM "entregas" WHERE estado_entrega='Entregado' AND id_pedido=%s                
+            """, (id_pedido,))
+            self._conn.commit()
+            return True
+        return None
+    
+    def __del__(self):
+        self._conn.close()
+
+class HandleOrdenesCompras:
+    def __init__(self) -> None:
+        try:
+            self._conn = psycopg2.connect(f"dbname={DBNAME} user=postgres password={PASSWORD} host={HOST} port={PORT}")
+            self._cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        except psycopg2.OperationalError as err:
+            print("\x1b[1;41mThe connection to the database hasn't been succesful\x1b[0;37m")
+            print(err)
+            self._conn.close()
+    
+    def insert(self, data, id_pedido, id_proveedor):
+        get_order = HandlePedidos().get_one(id_pedido)
+        get_supplier = HandleProveedores().get_one(id_proveedor)
+        get_one = self.get_one(id_pedido)
+        if get_order==None or get_supplier==None:
+            return False
+        elif get_one==None:
+            id_cliente = HandleClientes().get_one(get_order["id_cliente"])
+            self._cur.execute("INSERT INTO ordenes_compras(fecha_orden,estado_orden,id_cliente,id_proveedor,id_pedido) VALUES ('{}','{}','{}','{}','{}')". format(
+                data["fecha_orden"],
+                data["estado_orden"],
+                id_cliente["id"],
+                id_proveedor,
+                id_pedido
+            ))
+            self._conn.commit()
+            return True
+        return None
+    
+    def get_one(self, id_pedido):
+        self._cur.execute("""
+            SELECT * FROM "ordenes_compras" WHERE id_pedido=%s              
+            """,(id_pedido,))
+        return self._cur.fetchone()
+    
+    def get_all_client_buys(self, id_cliente):
+        get_client = HandleClientes().get_one(id_cliente)
+        if get_client:
+            self._cur.execute("""
+                SELECT * FROM "ordenes_compras" WHERE id_cliente=%s              
+                """,(id_cliente,))
+            return self._cur.fetchall()
+        return False
+    
+    def get_done_buy(self, id_pedido):
+        get_order = HandlePedidos().get_one(id_pedido)
+        if get_order:
+            self._cur.execute("""
+                SELECT * FROM "ordenes_compras" WHERE estado_orden='Terminado' AND id_pedido=%s             
+                """, (id_pedido,))
+            return self._cur.fetchone()
+        return False
+    
+    def update_state(self, state, id_pedido):
+        get_order = HandlePedidos().get_one(id_pedido)
+        if get_order:
+            self._cur.execute("UPDATE ordenes_compras SET estado_orden='{}' WHERE id_pedido='{}'".format(
+                state,
+                id_pedido
+            ))
+            self._conn.commit()
+            return True
+        return None
+    
+    def delete_done_buy(self, id_pedido):
+        done_buy = self.get_done_buy(id_pedido)
+        if done_buy==False:
+            return False
+        elif done_buy:
+            self._cur.execute("""
+                DELETE FROM "ordenes_compras" WHERE estado_orden='Terminado' AND id_pedido=%s              
+                """, (id_pedido,))
+            self._conn.commit()
+            return True
+        return None
+    
+    def __del__(self):
+        self._conn.close()
