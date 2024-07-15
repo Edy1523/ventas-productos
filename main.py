@@ -1,8 +1,10 @@
 from fastapi import FastAPI, Query, Path
 from config.handle_db import HandleClientes, HandleEmpleados, HandleProveedores, HandleProductos, HandleInventarios, HandlePedidos, HandleEntregas, HandleOrdenesCompras
 from config.handle_mview import HandleErrorDeliveries
+from config.handle_login import HandleLoginEmpleados, HandleLoginProveedores
 from schemas.tables_schemas import ClientesSchema, EmpleadosSchema, ProveedoresSchema, ProductosSchema, InventariosSchema, PedidosSchema, EntregasSchemas, OrdenesComprasSchemas
 from schemas.mview_schemas import ErrorDeliveriesSchema
+from schemas.logins_schemas import LoginEmpleadosSchema, LoginProveedoresSchema
 from utils.to_lowercase import to_lowercase
 from utils.to_title import to_title
 from fastapi.responses import JSONResponse
@@ -11,7 +13,7 @@ from middleware.error_handler import ErrorHandler
 #-->Aplication variables
 app = FastAPI()
 app.title = "Entregas Condor ltda."
-#0000 app.add_middleware(ErrorHandler) #Manejador de errores, que muestra el error sin saltar un error que detenga toda la aplicacion
+app.add_middleware(ErrorHandler) #Manejador de errores, que muestra el error sin saltar un error que detenga toda la aplicacion
 
 #-->Handle DB variables
 client = HandleClientes()
@@ -25,6 +27,10 @@ bill = HandleOrdenesCompras()
 
 #-->Handle mview variables
 error_delivery = HandleErrorDeliveries()
+
+#-->Handle Logins variables
+login_eployee = HandleLoginEmpleados()
+login_supplier = HandleLoginProveedores()
 
 #-->Utils variables
 lower = to_lowercase
@@ -76,6 +82,28 @@ def delete_client(id:int = Path(gt=0)):
         return JSONResponse(status_code=200, content={"Message":"¡Cliente eliminado con exito!"})
     return JSONResponse(status_code=400, content={"Message":"¡El cliente no se pudo eliminar, vuelva a intentarlo!"})
 
+#----ACCOUNT EMPLOYEE----
+@app.post("/account-employee/{id_empleado}", tags=["AccountEmployees"])
+def create_account_eployee(data:LoginEmpleadosSchema,id_empleado:int = Path(gt=0)):
+    data_dict = data.model_dump()
+    new_login = login_eployee.insert(data_dict,id_empleado)
+    if new_login:
+        return JSONResponse(status_code=201, content={"Message":"¡Sesión creada con exito!"})
+    elif new_login==False:
+        return JSONResponse(status_code=404, content={"Message":"¡No existe ningún empleado con esa id en la empresa!"})
+    return JSONResponse(status_code=400, content={"Message":"¡No ha se ha podido crear la sesión, porque ya existe una para esa id de empleado!"})
+
+#----LOGIN EMPLOYEE----
+@app.post("/login-employee/{id_empleado}", tags=["LoginEmployee"])
+def login_employees(contrasena:LoginEmpleadosSchema,id_empleado:int = Path(gt=0)):
+    contrasena_dict = contrasena.model_dump()
+    login = login_eployee.check_password(id_empleado,contrasena_dict)
+    if login:
+        return JSONResponse(status_code=200, content={"Message":"¡Te has logeado con exito!"})
+    elif login==False:
+        return JSONResponse(status_code=401, content={"Message":"¡Identificación o contraseña incorrecta!"})
+    return JSONResponse(status_code=404, content={"Message":"¡No existe ningún empleado con esa id en la empresa!"})
+
 #-------EMPLOYEE---------
 @app.post("/employee", tags=['Employees'], response_model=dict)
 def create_employee(employee_data:EmpleadosSchema):
@@ -117,6 +145,28 @@ def delete_employee(id:int = Path(gt=0)):
     if less_employee:
         return JSONResponse(status_code=200, content={"Message":"¡Empleado eliminado con exito!"})
     return JSONResponse(status_code=400, content={"Message":"¡El empleado no se pudo eliminar, vuelva a intentarlo!"})
+
+#----ACCOUNT SUPPLIER----
+@app.post("/account-supplier/{id_proveedor}", tags=["AccountSuppliers"])
+def create_account_supplier(data:LoginProveedoresSchema,id_proveedor:int = Path(gt=0)):
+    data_dict = data.model_dump()
+    new_login = login_supplier.insert(data_dict,id_proveedor)
+    if new_login:
+        return JSONResponse(status_code=201, content={"Message":"¡Sesión creada con exito!"})
+    elif new_login==False:
+        return JSONResponse(status_code=404, content={"Message":"¡No existe ningún proveedor con esa id en la empresa!"})
+    return JSONResponse(status_code=400, content={"Message":"¡No ha se ha podido crear la sesión, porque ya existe una para esa id de proveedor!"})
+
+#----LOGIN SUPPLIER----
+@app.post("/login-supplier/{id_proveedor}", tags=["LoginSuppliers"])
+def login_suppliers(contrasena:LoginProveedoresSchema,id_proveedor:int = Path(gt=0)):
+    contrasena_dict = contrasena.model_dump()
+    login = login_supplier.check_password(id_proveedor,contrasena_dict)
+    if login:
+        return JSONResponse(status_code=200, content={"Message":"¡Te has logeado con exito!"})
+    elif login==False:
+        return JSONResponse(status_code=401, content={"Message":"¡Identificación o contraseña incorrecta!"})
+    return JSONResponse(status_code=404, content={"Message":"¡No existe ningún proveedor con esa id en la empresa!"})
 
 #-------SUPPLIER-------
 @app.post("/supplier", tags=["Suppliers"], response_model=dict)
@@ -167,7 +217,7 @@ def create_product(data:ProductosSchema):
     new_product = product.insert(data_dict)
     return JSONResponse(status_code=201, content={"Message":"¡Producto creado con exito!"})
 
-@app.get("/products", tags=["Products"], response_model=ProductosSchema)
+@app.get("/product", tags=["Products"], response_model=ProductosSchema)
 def get_all_products():
     products = product.get_all()
     if products:
