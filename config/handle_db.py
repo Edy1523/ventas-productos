@@ -7,16 +7,12 @@ import psycopg2.extras
 env_path = Path('.') / '.env'
 load_dotenv(dotenv_path=env_path)
 
-DBNAME : str = os.getenv("DBNAME")#''
-#USER : str = os.getenv("USER")
-PASSWORD : str = os.getenv("PASSWORD")
-HOST : str = os.getenv("HOST")
-PORT : str = os.getenv("PORT")
+URL : str = os.getenv("URL")
 
 class HandleClientes:
     def __init__(self):
         try:
-            self._conn = psycopg2.connect(f"dbname={DBNAME} user=postgres password={PASSWORD} host={HOST} port={PORT}")
+            self._conn = psycopg2.connect(URL)
             self._cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         except psycopg2.OperationalError as err:
             print("\x1b[1;41mThe connection to the database hasn't been succesful\x1b[0;37m")
@@ -77,7 +73,7 @@ class HandleClientes:
 class HandleEmpleados:
     def __init__(self) -> None:
         try:
-            self._conn = psycopg2.connect(f"dbname={DBNAME} user=postgres password={PASSWORD} host={HOST} port={PORT}")
+            self._conn = psycopg2.connect(URL)
             self._cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         except psycopg2.OperationalError as err:
             print("\x1b[1;41mThe connection to the database hasn't been succesful\x1b[0;37m")
@@ -138,7 +134,7 @@ class HandleEmpleados:
 class HandleProveedores:
     def __init__(self) -> None:
         try:
-            self._conn = psycopg2.connect(f"dbname={DBNAME} user=postgres password={PASSWORD} host={HOST} port={PORT}")
+            self._conn = psycopg2.connect(URL)
             self._cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         except psycopg2.OperationalError as err:
             print("\x1b[1;41mThe connection to the database hasn't been succesful\x1b[0;37m")
@@ -198,7 +194,7 @@ class HandleProveedores:
 class HandleProductos:
     def __init__(self) -> None:
         try:
-            self._conn = psycopg2.connect(f"dbname={DBNAME} user=postgres password={PASSWORD} host={HOST} port={PORT}")
+            self._conn = psycopg2.connect(URL)
             self._cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         except psycopg2.OperationalError as err:
             print("\x1b[1;41mThe connection to the database hasn't been succesful\x1b[0;37m")
@@ -282,7 +278,7 @@ class HandleProductos:
 class HandleInventarios:
     def __init__(self) -> None:
         try:
-            self._conn = psycopg2.connect(f"dbname={DBNAME} user=postgres password={PASSWORD} host={HOST} port={PORT}")
+            self._conn = psycopg2.connect(URL)
             self._cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         except psycopg2.OperationalError as err:
             print("\x1b[1;41mThe connection to the database hasn't been succesful\x1b[0;37m")
@@ -364,7 +360,7 @@ class HandleInventarios:
 class HandlePedidos:
     def __init__(self) -> None:
         try:
-            self._conn = psycopg2.connect(f"dbname={DBNAME} user=postgres password={PASSWORD} host={HOST} port={PORT}")
+            self._conn = psycopg2.connect(URL)
             self._cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         except psycopg2.OperationalError as err:
             print("\x1b[1;41mThe connection to the database hasn't been succesful\x1b[0;37m")
@@ -428,7 +424,7 @@ class HandlePedidos:
 class HandleEntregas:
     def __init__(self) -> None:
         try:
-            self._conn = psycopg2.connect(f"dbname={DBNAME} user=postgres password={PASSWORD} host={HOST} port={PORT}")
+            self._conn = psycopg2.connect(URL)
             self._cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         except psycopg2.OperationalError as err:
             print("\x1b[1;41mThe connection to the database hasn't been succesful\x1b[0;37m")
@@ -519,7 +515,7 @@ class HandleEntregas:
 class HandleOrdenesCompras:
     def __init__(self) -> None:
         try:
-            self._conn = psycopg2.connect(f"dbname={DBNAME} user=postgres password={PASSWORD} host={HOST} port={PORT}")
+            self._conn = psycopg2.connect(URL)
             self._cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         except psycopg2.OperationalError as err:
             print("\x1b[1;41mThe connection to the database hasn't been succesful\x1b[0;37m")
