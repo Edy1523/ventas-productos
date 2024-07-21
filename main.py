@@ -9,11 +9,15 @@ from utils.to_lowercase import to_lowercase
 from utils.to_title import to_title
 from fastapi.responses import JSONResponse
 from middleware.error_handler import ErrorHandler
+from service.database_connection import engine, Base
 
-#-->Aplication variables
+#-->Application variables
 app = FastAPI()
 app.title = "Entregas Condor ltda."
 app.add_middleware(ErrorHandler) #Manejador de errores, que muestra el error sin saltar un error que detenga toda la aplicacion
+
+#-->Creation of the tables in the serverless database
+Base.metadata.create_all(bind=engine)
 
 #-->Handle DB variables
 client = HandleClientes()
