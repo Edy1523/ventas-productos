@@ -1,6 +1,6 @@
-# Title: Backend for a simulated case of a enterprise that sells cleaning products
+# Backend for a simulated case of a enterprise that sells cleaning products
 ---
-## Overview: Description of the problem
+## Description of the problem
 This document explain in detail how the architecture of the application works, here are images of the templates use in every schema, the basemodels for every parameter that we need form the client, and finally, get save in the database. The backend was made for the enterprise Entregas Condor ltda.
 
 ## Stakeholders
@@ -10,6 +10,7 @@ This document explain in detail how the architecture of the application works, h
 - This is a high level design, is not ment to hold specifics of implementation of the presented components on this system.
 - This is just a simulated case, I created the name of the enterprise and the base, based in an idea of a project that I had meanwhile I was working in one of my GitHub repositories.
 - All this idea is made especifically for my CV, and to complete my skills for search work.
+- This is just the first implementation or version, maybe in the future it could be more updates for this project, adding more funcionts or making it full serverless.
 
 ## Definitions and Acronyms
 **Note:** These terms were taken from: https://fastapi.tiangolo.com/, https://www.psycopg.org/docs/index.html
@@ -37,19 +38,27 @@ The supported cases all the specific things that I have to achive, following the
 
 ### Out of Scope
 * Any form of user data collection; no data will be collected in this project.
-* The front-end of the website.
 * Email notifications are out of scope.
-* Cost calculation won't be updated from initial calculation
+* Cost calculation, cause from initial process all the services will be totally free.
+* Maintenance for the PostgreSQL database, Render is in charge of this jobs, for both, the database and the web service.
+* Data analisys. 
 ---
 ## Proporsal
 
 ### Architecture
 The architecture is designed based in a high level state for the backend, so the specifications are made in general ways.
-The proposed system will have and API for the comunications between the client and server, the server is composed from the database and the backend, for the conecction of the clients query through all the comuncation path of the server will be managed by the driver, psycopg will be in charged of the insert to the database and the returns to the client. The inserts will be used in a basemodel template that will be return to the client in JSONResponse. 
+The proposed system will have and API for the comunications between the client and  the serverless, locate in the cloud provider Render. This service is composed from the database Postgresql, where is totally support by Render, the service is create for totally free acces. This Free instance offers:
+- 256 MB RAM
+- 100m CPU
+- 1 GB Storage
+And the database will be deleted on August 17, 2024 (one month after I created), enough time to make the project and finish my process of looking for work. 
+The backend services, is also support by Render, in a web service for the connection of the querys through all the comuncation path of the server will be managed by the driver, psycopg will be in charged of the insert to the database and the returns to the client. The inserts will be used in a basemodel template that will be return to the client in JSONResponse. This service is also totally free of an instance with:
+- 0.1 CPU
+- 512 MB
 
 ### Architecture Diagram
 This is the architecture designed for the high level backend of the application.
-![High level Achitecture](<Diagrama arquitectura alto nivel.drawio.png>)
+![High level Architecture](<Diagrama arquitectura alto nivel.png>)
 
 #### External components:
 The external components was talked with the enterprise, and basically are the applications where I and the other teams encharged of the project, will be posting special reports about the performance of the web and possible errors that appears in the life time of the web site.
@@ -125,7 +134,7 @@ The external components was talked with the enterprise, and basically are the ap
             }
         }
 
-#### Schema of the postgresql materialized view
+#### Schema of the Postgresql materialized view
 **error_delivery:**{
             "example":{
                 "descripcion":"descripcion de por qué fallo el envio",
@@ -149,28 +158,26 @@ The testing plan are made by two diferent algorithms, called the black box and c
 Additionally in the main code are JSONResponses that have the enough logic to cover 404, 400 and 401 errors, and Fastapi has reponses for bad request or querys that aren't in the base models proposed as template.
 The last test that covers the end to end part of the application, is the middleware error handler, implemented with a starlette import, this handler will take any error that could appear in any of the phases of the application, the middleware as fast as finds and 500 error print it with status and a text that shows whats wrong and in what part of the code, which is very usefull in the reports that I have to give to the enterprise.
 
----
 ## Limitations
-* The server can't handle more than 1000 calls in a second at the same time.
-* Server responses have a latency of 2.3 milliseconds.
+These are the limitations thar Render gives for the free instance.
+### Web server
+* Render grants 750 Free instance hours to each user and team per calendar month.
+* Render may suspend a Free web service that initiates an uncommonly high volume of traffic over the public internet. Service-initiated traffic is not included in the account’s outbound bandwidth allotment, which applies only to the service’s responses to incoming requests.
+* Render might restart a Free web service at any time.
+* Free web services don’t support the following features of paid instance types:
+    - Scaling beyond a single instance
+    - Persistent disks
+    - Running one-off jobs
+    - Shell access from the Render Dashboard
+* Free web services can’t receive private network traffic.
+* Free web services can’t listen on reserved ports 18012, 18013, or 19099.
+### Postgresql
+* Free PostgreSQL databases expire 30 days after creation. An expired Free database is inaccessible unless I upgrade it to a paid instance type.
+* Render might perform maintenance on a Free PostgreSQL database at any time. The database is temporarily unavailable during maintenance.
+* Render might restart a Free PostgreSQL database at any time.
+* Free PostgreSQL databases don’t support any form of backups.
 ---
 
 ## Costs
-Description/Cost analysis
-
-### Monthly cost (30 days) phase 1
-example:
-Exact cost be calculated as not enough data is available to estimate accurately. However, based on initial calculation(first draft), an educated guess suggest a reduction of aprox 2x. Assumed cost -> aprox Up to $40.00 for 100 cities
-Estimated cost goes as follows (per supported city feed):
-* Cloudwatch events: $1.00US per 1 Million
-* Estimated calls per month: 8640 (every 5 mins for 30 days)
-* cloudwatch cost per feed per month: $0.02592 USD
-...
-#### Images of charts showing numbers of the costs
-DynamoDB costs: Upon testing, costs are significantly low to perform a reliable calculation, as shown in the following image. Each execution shows minimal usage on write units (same is for read units) used to calculate cost.
-
-### Monthly Cost (30 day) (calculated on first draft of this proposal)
-example:
-Costs exclude email/sms publishing
-* Up to $20.66 (Mexico city, Guadalajara, Monterrey)
-* Up to $58.63 for 100 cities (Mexico city is special case, counts as 16 cities on its own)
+This project is made by free services, that integrates all the functions of the website.
+This is the first version of the project, which it means that at the date of the last commit, the functions of the web and database are locate in Render, so for now is totally free the creation and execution of the website, for sale and delivery of cleaning products, by the company Entregas Condor.

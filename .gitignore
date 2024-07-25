@@ -4,6 +4,27 @@ __pycache__
 # Created by https://www.toptal.com/developers/gitignore/api/macos,linux,windows,python
 # Edit at https://www.toptal.com/developers/gitignore?templates=macos,linux,windows,python
 
+### Images ###
+# JPEG
+*.jpg
+*.jpeg
+*.jpe
+*.jif
+*.jfif
+*.jfi
+
+# Graphics Interchange Format
+*.gif
+
+# RAW
+*.raw
+
+# Web P
+*.webp
+
+# Portable Network Graphics
+*.png
+
 ### Linux ###
 *~
 
