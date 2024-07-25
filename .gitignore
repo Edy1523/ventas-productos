@@ -22,9 +22,6 @@ __pycache__
 # Web P
 *.webp
 
-# Portable Network Graphics
-*.png
-
 ### Linux ###
 *~
 
